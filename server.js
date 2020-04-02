@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
+const dotenv = require('dotenv');
+dotenv.config();
 
 
 const app = express();
@@ -27,7 +29,7 @@ app.use(async function (err, req, res, next) {
     next();
 });
 
-const PORT = 7000;
+const PORT = process.env.PORT || 7000;
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
