@@ -208,7 +208,7 @@ router.post('/account-activation', (req, res) => {
             }
             const {name, email, password} = jwt.decode(token);
 
-            const user = new userModel( name, email, password);
+            const user = new userModel({ name, email, password });
 
             user    
                 .save((err, user) => {
