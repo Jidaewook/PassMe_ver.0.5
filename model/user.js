@@ -5,16 +5,16 @@ const gravatar = require('gravatar');
 const userSchema = new mongoose.Schema(
     {
         name: {
-            type: String,
-            required: true
+            type: String
+            // required: true
         },
         email: {
-            type: String,
-            required: true
+            type: String
+            // required: true
         },
         password: {
-            type: String,
-            required: true
+            type: String
+            // required: true
         },
         avatar: {
             type: String
@@ -52,11 +52,18 @@ userSchema.pre('save', async function (next){
     }
 });
 
-userSchema.methods.comparePassword = funtion(candidatePassword, cb) {
+userSchema.methods.comparePassword = function (candidatePassword, cb) {
     bcrypt.compare(candidatePassword, this.password, (err, isMatch) => {
-        if(err) return cb(err);
-        cb(null, isMatch)
+        if (err) return cb(err);
+        cb(null, isMatch);
     });
 };
+
+// userSchema.methods.comparePassword = funtion(candidatePassword, cb) {
+//     bcrypt.compare(candidatePassword, this.password, (err, isMatch) => {
+//         if(err) return cb(err);
+//         cb(null, isMatch);
+//     });
+// };
 
 module.exports = mongoose.model('user', userSchema);

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
+const userModel = require('../model/user');
 
 
 // register
@@ -9,7 +10,40 @@ const router = express.Router();
 // @access public
 
 router.post('/register', (req, res) => {
+    const {name, email, password} = req.body;
 
+    userModel
+        .findOne({email})
+        .then(user => {
+            if(user){
+                return res.status(404).json({
+                    error: 'Email already exists'
+                });
+            } 
+            const newUser = new userModel({
+                name, email, password
+            });
+            newUser
+                .save((err) => {
+                    if(err){
+                        return res.status(400).json({
+                            error: err.message
+                        });
+                    }
+                    const token = jwt.sign(
+                        {name, email, password},
+                        process.env.JWT_ACCOUNT_ACTIVATION,
+                        {expiresIn: '10m'}    
+                    );
+                    res.json({
+                        message: 'Signup success! Please signin',
+                        tokenInfo: token
+                    })
+                });
+                    
+                
+        });
+        
 });
 
 // login
@@ -18,8 +52,132 @@ router.post('/register', (req, res) => {
 // @access public
 
 router.post('/login', (req, res) => {
+    const {email, password} = req.body;
 
+    userModel
+        .findOne({email})
+        .exec((err, user) => {
+            if(err || !user) {
+                return res.json(400).json({
+                    error: 'User with that email does not exist. please signup'
+                });
+            }
+            if(!user.authenticate(password)){
+                return res.status(400).json({
+                    error: 'Email and password do not match'
+                });
+            }
+            const token = jwt.sign({
+                _id: user._id
+            },
+            process.env.JwT_SECRET, {expiresIn: '7d'};
+            const {_id, name, email, role} = user;
+            return res.status(200).json({
+                tokenInfo: token,
+                user: {_id, name, email, role}
+            }); 
+        })
 });
+
+router.put('/forgot', (req, res) => {
+    const {email} = req.body;
+
+    userModel
+        .findOne({email}, (err, user) => {
+            if(err || !user){
+                return res.status(400).json({
+                    error: 'User with that email does not exist'
+                });
+            }
+            const token = jwt.sign(
+                {_id: user._id, name: user.name},
+                process.env.JWT_RESET_PASSWORD,
+                {expiresIn: '10m'}
+            )
+            const emailData = {
+                from: process.env.EMAIL_FROM,
+                to: email,
+                subject: `Password Reset Link`,
+                html: 
+                    `
+                        <h1>Please use the follwing link to reset your password</h1>
+                        <p>${process.env.CLIENT_URL}/auth/password/reset${token}</p>
+                        <hr />
+                        <p>This email may contain sensetive information</p>
+                        <p>${process.env.CLIENT_URL}</p>
+                    `
+            };
+
+// SGMAIL에서 인증을 거부한 상황이기 때문에 SGMAIL항목은 바꿔야 함
+            return user    
+                .updateOne({resetPasswordLink: token}, (err, success) => {
+                    if(err){
+                        return res.status(400).json({
+                            error: 'Database connection error on user password forgot request'
+                        });
+                    } else {
+                        sgMail
+                            .send(emailData)
+                            .then(setn => {
+                                return res.json({
+                                    message: `Email has been setn to ${email}. Follow the instruction to activate your account`
+                                });
+                            })
+                            .catch(err => {
+                                return res.json({
+                                    message: err.message
+                                });
+                            });
+                    };
+                })
+        })
+})
+
+
+// @route PUT users/reset
+// @desc Profile RESET
+// @account Private
+
+router.put('/reset', (req, res) => {
+    const {name, password} = req.body;
+
+    userModel
+        .findOne({_id: req.user._id}, (err, user) => {
+            if(err || !user) {
+                return res.status(400).json({
+                    error: 'User not found'
+                });
+            }
+            if(!name){
+                return res.status(400).json({
+                    error: 'Name is required'
+                });
+            } else {
+                user.name = name;
+            }
+            if(password) {
+                if(password.length < 6) {
+                    return res.status(400).json({
+                        error: 'Password should be min 6characters long'
+                    });
+                } else {
+                    user.password = password;
+                }
+            }
+            user.save((err, updatedUser) => {
+                if(err) {
+                    console.log('USER UPDATE ERROR', err);
+                    return res.status(400).json({
+                        error: 'USER UPDATE FAILED'
+                    });
+                }
+                updatedUser.hashed_password = undefined;
+                updatedUser.salt = undefined;
+                res.json(updatedUser);
+            });
+        });
+});
+
 
 
 module.exports = router;
