@@ -196,6 +196,38 @@ router.put('/reset', (req, res) => {
         });
 });
 
+router.post('/account-activation', (req, res) => {
+    const {token} = req.body;
+
+    if(token) {
+        jwt.verify(token, process.env.JWT_ACCOUNAT_ACTIVATION, function(err, decoded){
+            if(err) {
+                return res.status(401).json({
+                    error: 'Expired link. Signup again'
+                });
+            }
+            const {name, email, password} = jwt.decode(token);
+
+            const user = new userModel( name, email, password);
+
+            user    
+                .save((err, user) => {
+                    if(err) {
+                        return res.status(401).json({
+                            error: 'Error saving user in database. Try signup again'
+                        });
+                    }
+                    return res.json({
+                        message: 'Signup success. Please Signin'
+                    });
+                });
+        });
+    } else {
+        return res.json({
+            message: 'Something went wrong. Try again'
+        });
+    }
+});
 
 
 module.exports = router;
