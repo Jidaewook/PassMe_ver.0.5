@@ -3,6 +3,7 @@ const router = express.Router();
 const tokenGenerator = require('../config/tokengenerator');
 const passport = require('passport');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
 const userModel = require('../model/user');
 
@@ -87,7 +88,9 @@ router.post('/forgot', (req, res) => {
 
                         return res.status(200).json({
                             success: true,
-                            message: '이메일로 패스워드를 리셋하기 위한 링크를 보냈다.'
+                            message: '이메일로 패스워드를 리셋하기 위한 링크를 보냈다.',
+                            tokenInfo: user.resetPasswordToken
+                            
                         })
                     });
 
@@ -100,50 +103,67 @@ router.post('/forgot', (req, res) => {
             
 });
 
+router.post('/reset/:token', (req, res) => {
+    const {password} = req.body;
+
+    if(!password){
+        return res.status(422).json({
+            error: '비밀번호를 입력하세요.'
+        })
+    }
+    userModel
+        .findOne(
+            {
+                resetPasswordToken: req.params.token,
+                resetPasswordExpires: { $gt: Date.now() }
+            },
+        )
+        .then(user => {
+            console.log(user);
+            if(!user){
+                return res.status(422).json({
+                    error: '사용자 토큰이 만료되었습니다. 다시 로그인하세요.'
+                });
+            }
+            bcrypt.genSalt(10, (err, salt) => {
+                bcrypt.hash(password, salt, (err, hash) => {
+                    if(err) {
+                        return res.status(422).json({
+                            error: err.message
+                        });
+                    }
+                    password = hash;
+
+                    user.password = password;
+                    user.resetPasswordToken = undefined;
+                    user.resetPasswordExpires = undefined;
+
+                    user
+                        .save(err => {
+                            if(err) {
+                                return res.status(422).json({
+                                    error: '리셋한 패스워드를 저장하는 과정에서 에러가 발생했습니다.'
+                                });
+                            }
+                            
+                            const message = template.confirmResetPasswordEmail();
+                            mailgun.sendEmail(user.email, message);
+
+                            return res.status(200).json({
+                                success: true,
+                                message: '패스워드가 리셋되었고, 이메일을 보내주었다.'
+                            })
+                        })
+                                               
+                })
+            });
+        })
+        .catch();
+});
 
 // @route PUT users/reset
 // @desc Profile RESET
 // @account Private
-
-router.put('/reset', (req, res) => {
-    // const {name, password} = req.body;
-
-    // userModel
-    //     .findOne({_id: req.user._id}, (err, user) => {
-    //         if(err || !user) {
-    //             return res.status(400).json({
-    //                 error: 'User not found'
-    //             });
-    //         }
-    //         if(!name){
-    //             return res.status(400).json({
-    //                 error: 'Name is required'
-    //             });
-    //         } else {
-    //             user.name = name;
-    //         }
-    //         if(password) {
-    //             if(password.length < 6) {
-    //                 return res.status(400).json({
-    //                     error: 'Password should be min 6characters long'
-    //                 });
-    //             } else {
-    //                 user.password = password;
-    //             }
-    //         }
-    //         user.save((err, updatedUser) => {
-    //             if(err) {
-    //                 console.log('USER UPDATE ERROR', err);
-    //                 return res.status(400).json({
-    //                     error: 'USER UPDATE FAILED'
-    //                 });
-    //             }
-    //             updatedUser.hashed_password = undefined;
-    //             updatedUser.salt = undefined;
-    //             res.json(updatedUser);
-    //         });
-    //     });
-});
 
 router.post('/account-activation', (req, res) => {
     // const {token} = req.body;
