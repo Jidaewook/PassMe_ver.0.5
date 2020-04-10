@@ -3,11 +3,12 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const expressJwt = require('express-jwt');
 
-
 const userModel = require('../model/user');
 
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(preocess.env.SENDGRID_API_KEY);
+
+const mailgun = require('../config/mailgun');
+const template = require('../config/template');
+
 
 // register
 // @route POST users/register
@@ -15,7 +16,9 @@ sgMail.setApiKey(preocess.env.SENDGRID_API_KEY);
 // @access public
 
 router.post('/register', (req, res) => {
+    
     const {name, email, password} = req.body;
+
 
     userModel
         .findOne({email})
@@ -28,40 +31,25 @@ router.post('/register', (req, res) => {
             const newUser = new userModel({
                 name, email, password
             });
-            const token = jwt.sign(
-                {name, email, password}, 
-                process.env.JWT_ACCOUNAT_ACTIVATION,
-                {expiresIn: '10m'}
-            );
-            const emailData = {
-                from: process.env.EMAIL_FROM,
-                to: 'email',
-                subject: 'Account activation link',
-                html: `
-                    <h1>Please use the following link to activate your account</h1>
-                    <p>${process.env.CLIENT_URL}/auth/activate/${token}</p>
-                    <hr />
-                    <p>This email may contain sensetive information</p>
-                    <p>${process.env.CLIENT_URL}</p>
-                
-                `
-            };
-            // 센드그리드 항목
-            sgMail
-                .send(emailData)
-                .then(sent => {
-                    return res.status(200).json({
-                        message: 'Email has been sent to ${email}. Follow the instruction to activate your account'
-                    });
+
+            newUser
+                .save()
+                .then(user => {
+                    res.status(200).json({
+                        message: "Successful new User", 
+                        userInfo: user                        
+                    }); 
+
+                    const message = template.signupEmail(user.name);
+                    mailgun.sendEmail(user.email, message);
                 })
                 .catch(err => {
-                    return res.json({
+                    res.status(400).json({
                         message: err.message
                     });
-                });                    
-                
-        });
-        
+                });
+      });
+                    
 });
 
 // login
@@ -70,86 +58,50 @@ router.post('/register', (req, res) => {
 // @access public
 
 router.post('/login', (req, res) => {
-    const {email, password} = req.body;
+    // const {email, password} = req.body;
 
-    userModel
-        .findOne({email})
-        .exec((err, user) => {
-            if(err || !user) {
-                return res.json(400).json({
-                    error: 'User with that email does not exist. please signup'
-                });
-            }
-            if(!user.authenticate(password)){
-                return res.status(400).json({
-                    error: 'Email and password do not match'
-                });
-            }
-            const token = jwt.sign({
-                _id: user._id
-            },
-            process.env.JwT_SECRET, {expiresIn: '7d'};
-            const {_id, name, email, role} = user;
-            return res.status(200).json({
-                tokenInfo: token,
-                user: {_id, name, email, role}
-            }); 
-        })
+    // userModel
+    //     .findOne({email})
+    //     .exec((err, user) => {
+    //         if(err || !user) {
+    //             return res.json(400).json({
+    //                 error: 'User with that email does not exist. please signup'
+    //             });
+    //         }
+    //         if(!user.authenticate(password)){
+    //             return res.status(400).json({
+    //                 error: 'Email and password do not match'
+    //             });
+    //         }
+    //         const token = jwt.sign({
+    //             _id: user._id
+    //         },
+    //         process.env.JwT_SECRET, {expiresIn: '7d'});
+    //         const {_id, name, email, role} = user;
+    //         return res.status(200).json({
+    //             tokenInfo: token,
+    //             user: {_id, name, email, role}
+    //         }); 
+    //     })
 });
 
 router.put('/forgot', (req, res) => {
-    const {email} = req.body;
+    // const {email} = req.body;
 
-    userModel
-        .findOne({email}, (err, user) => {
-            if(err || !user){
-                return res.status(400).json({
-                    error: 'User with that email does not exist'
-                });
-            }
-            const token = jwt.sign(
-                {_id: user._id, name: user.name},
-                process.env.JWT_RESET_PASSWORD,
-                {expiresIn: '10m'}
-            )
-            const emailData = {
-                from: process.env.EMAIL_FROM,
-                to: email,
-                subject: `Password Reset Link`,
-                html: 
-                    `
-                        <h1>Please use the follwing link to reset your password</h1>
-                        <p>${process.env.CLIENT_URL}/auth/password/reset${token}</p>
-                        <hr />
-                        <p>This email may contain sensetive information</p>
-                        <p>${process.env.CLIENT_URL}</p>
-                    `
-            };
-
-// SGMAIL에서 인증을 거부한 상황이기 때문에 SGMAIL항목은 바꿔야 함
-            return user    
-                .updateOne({resetPasswordLink: token}, (err, success) => {
-                    if(err){
-                        return res.status(400).json({
-                            error: 'Database connection error on user password forgot request'
-                        });
-                    } else {
-                        sgMail
-                            .send(emailData)
-                            .then(sent => {
-                                return res.json({
-                                    message: `Email has been setn to ${email}. Follow the instruction to activate your account`
-                                });
-                            })
-                            .catch(err => {
-                                return res.json({
-                                    message: err.message
-                                });
-                            });
-                    };
-                })
-        })
-})
+    // userModel
+    //     .findOne({email}, (err, user) => {
+    //         if(err || !user){
+    //             return res.status(400).json({
+    //                 error: 'User with that email does not exist'
+    //             });
+    //         }
+    //         const token = jwt.sign(
+    //             {_id: user._id, name: user.name},
+    //             process.env.JWT_RESET_PASSWORD,
+    //             {expiresIn: '10m'}
+    //         )
+            
+});
 
 
 // @route PUT users/reset
@@ -228,6 +180,7 @@ router.post('/account-activation', (req, res) => {
         });
     }
 });
+
 
 
 module.exports = router;
