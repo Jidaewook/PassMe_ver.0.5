@@ -10,7 +10,7 @@ const ProfileSchema = new mongoose.Schema({
         type: Number
     },
     bio: {
-        type: 
+        type: String
     },
     major: {
         type: String

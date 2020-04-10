@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const tokenGenerator = require('../config/tokengenerator');
+const passport = require('passport');
 
 const userModel = require('../model/user');
 
@@ -8,6 +9,9 @@ const mailgun = require('../config/mailgun');
 const template = require('../config/template');
 
 const {user_register} = require('../controller/user');
+
+const checkAuth = passport.authenticate('jwt', {session: false});
+
 // register
 // @route POST users/register
 // @desc register user
@@ -141,6 +145,12 @@ router.post('/account-activation', (req, res) => {
     }
 });
 
+// 유저 토큰을 넣으면 현재 유저가 들어왔는지 확인하기(헤더에서 Authorization에 토큰 정보를 넣어주면 된다.)
+router.get('/current', checkAuth, (req, res) => {
+    res.status(200).json({
+        userInfo: req.user
+    });
+});
 
 
 module.exports = router;

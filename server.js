@@ -5,6 +5,8 @@ const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 dotenv.config();
 
+const passport = require('passport');
+
 const ncsRoute = require('./Route/ncs');
 const psatRoute = require('./Route/psat');
 const userRoute = require('./Route/user');
@@ -17,6 +19,9 @@ app.use(morgan('dev'));
 app.use('./uploads/', express.static('uploads'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(passport.initialize());
+require("./config/passport")(passport);
+
 
 app.use('/lecture/ncs', ncsRoute);
 app.use('/lecture/psat', psatRoute);
