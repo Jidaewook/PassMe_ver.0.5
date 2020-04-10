@@ -1,4 +1,7 @@
 const userModel = require('../model/user');
+const mailgun = require('../config/mailgun');
+const template = require('../config/template');
+
 
 exports.user_register = (req, res) => {
 
