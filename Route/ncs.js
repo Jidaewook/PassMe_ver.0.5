@@ -1,44 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
 
 const ncsModel = require('../model/ncs');
 
-
 // upload files
-const imageStorage = multer.diskStorage({
-    destination: function (req, file, cb){
-        cb(null, './uploads/');
-    },
-    filename: function (req, file, cb) {
-        cb(null, new Date().toISOString() + file.originalname);     
-    }
-        
-});
-
-const imageFilter = (req, file, cb) => {
-    if(file.mimetype === 'image/jpeg' || file.mimetype === 'image/png'){
-        cb(null, true);
-    } else {
-        cb(null, false);
-    }
-};
-
-const upload = multer({
-    storage: imageStorage,
-    limits: {
-        fileSize: 1024 * 1024 * 5
-    }, 
-    fileFilter: imageFilter
-
-});
+const upload = require('../config/multer');
 
 // create 
 // @route POST /lecture/ncs
 // @desc Create ncs
 // @access public(최종 private: admin)
 
-router.post('/', upload.single('thumbnail'), (req, res) => {
+router.post('/', upload.upload.single('thumbnail'), (req, res) => {
     const ncsFields = {};
 
     if(req.body.title) ncsFields.title = req.body.title;
