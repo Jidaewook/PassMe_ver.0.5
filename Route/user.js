@@ -1,14 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
-const expressJwt = require('express-jwt');
+const tokenGenerator = require('../config/tokengenerator');
 
 const userModel = require('../model/user');
 
-
 const mailgun = require('../config/mailgun');
 const template = require('../config/template');
-
 
 // register
 // @route POST users/register
@@ -58,31 +55,28 @@ router.post('/register', (req, res) => {
 // @access public
 
 router.post('/login', (req, res) => {
-    // const {email, password} = req.body;
+    const {email, password} = req.body;
 
-    // userModel
-    //     .findOne({email})
-    //     .exec((err, user) => {
-    //         if(err || !user) {
-    //             return res.json(400).json({
-    //                 error: 'User with that email does not exist. please signup'
-    //             });
-    //         }
-    //         if(!user.authenticate(password)){
-    //             return res.status(400).json({
-    //                 error: 'Email and password do not match'
-    //             });
-    //         }
-    //         const token = jwt.sign({
-    //             _id: user._id
-    //         },
-    //         process.env.JwT_SECRET, {expiresIn: '7d'});
-    //         const {_id, name, email, role} = user;
-    //         return res.status(200).json({
-    //             tokenInfo: token,
-    //             user: {_id, name, email, role}
-    //         }); 
-    //     })
+    userModel
+        .findOne({email})
+        .then(user => {
+            if(!user){
+                return res.status(404).json({
+                    error: 'user not found'
+                }); 
+            }
+            user.comparePassword(password, (err, isMatch) => {
+                if(err) throw err;
+                const payload = { id: user._id, name: user.name, email: user.email, avatar: user.avatar };
+
+                res.status(200).json({
+                    success: isMatch,
+                    token: tokenGenerator(payload)
+                });
+            })
+
+        });
+
 });
 
 router.put('/forgot', (req, res) => {
