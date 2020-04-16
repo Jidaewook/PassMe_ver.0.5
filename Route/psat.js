@@ -4,6 +4,9 @@ const multer = require('multer');
 
 const psatModel = require('../model/psat');
 
+const {psat_post, psat_get} = require('../controller/psat');
+const {} = require('../controller/multer');
+
 // upload files
 const imageStorage = multer.diskStorage({
     destination: function (req, file, cb){
@@ -37,52 +40,11 @@ const upload = multer({
 // @desc Create psat
 // @access private(admin)
 
-router.post('/', upload.single('thumbnail'), (req, res) => {
-    const psatFields = {};
-
-    if(req.body.title) psatFields.title = req.body.title;
-    if(req.body.desc) psatFields.desc = req.body.desc;
-    if(req.body.url) psatFields.url = req.body.url;
-    if(req.file.path) psatFields.thumbnail = req.file.path;
-    if(req.body.attached) psatFields.attached = req.body.attached;
-    if(typeof req.body.tag !== 'undefined'){
-        psatFields.tag = req.body.tag.split(',')
-    }
-
-    const newPsat = new psatModel(psatFields);
-    newPsat
-        .save()
-        .then(item => {
-            res.status(200).json({
-                message: 'Successful Psat',
-                psatInfo: item
-            })
-        })
-        .catch(err => {
-            res.status(500).json({
-                error: err.message
-            });
-        });
-});
+router.post('/', upload.single('thumbnail'), psat_post);
 
 
 // get
-router.get('/', (req, res) => {
-    psatModel
-        .find()
-        .then(items => {
-            res.status(200).json({
-                message: 'Successful Get PSAT',
-                count: items.length,
-                psatInfo: items
-            })
-        })
-        .catch(err => {
-            res.status(500).json({
-                error: err.message
-            });
-        });
-});
+router.get('/', psat_get);
 
 // detailget
 

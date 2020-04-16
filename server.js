@@ -10,6 +10,7 @@ const passport = require('passport');
 const ncsRoute = require('./Route/ncs');
 const psatRoute = require('./Route/psat');
 const userRoute = require('./Route/user');
+const profileRoute = require('./Route/profile');
 
 const app = express();
 require('./config/database');
@@ -26,6 +27,7 @@ require("./config/passport")(passport);
 app.use('/lecture/ncs', ncsRoute);
 app.use('/lecture/psat', psatRoute);
 app.use('/users', userRoute);
+app.use('/profile', profileRoute);
 
 
 app.use(function (req, res, next) {
