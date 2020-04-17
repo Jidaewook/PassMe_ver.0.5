@@ -1,6 +1,6 @@
 const mailgun = require('mailgun-js')({
-    apiKey: '035de80b312abe8ee683a231aeafa247-915161b7-9c943b31',
-    domain: 'sandbox67853608049b4f6095db8b486fdf19a2.mailgun.org'
+    apiKey: 'key-dfdd569fff0c0a2fed851ab37bfc78ca',
+    domain: 'sandbox897e8dcc6aa044b0b2e3fa429bee00c9.mailgun.org'
 });
 
 const sender = 'dw4157@naver.com';

@@ -1,10 +1,15 @@
 const userModel = require('../model/user');
 const mailgun = require('../config/mailgun');
 const template = require('../config/template');
+const tokenGenerator = require('../config/tokengenerator');
+const passport = require('passport');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
 
-exports.user_register = (req, res) => {
 
+
+exports.user_register =(req, res) => {
     const { name, email, password } = req.body;
 
 
@@ -28,8 +33,8 @@ exports.user_register = (req, res) => {
                         userInfo: user
                     });
 
-                    const message = template.signupEmail(user.name);
-                    mailgun.sendEmail(user.email, message);
+                    // const message = template.signupEmail(user.name);
+                    // mailgun.sendEmail(user.email, message);
                 })
                 .catch(err => {
                     res.status(400).json({
@@ -37,8 +42,7 @@ exports.user_register = (req, res) => {
                     });
                 });
         });
-
-};
+    };
 
 exports.user_login = (req, res) => {
     const { email, password } = req.body;
@@ -96,9 +100,9 @@ exports.user_forgot = (req, res) => {
                                 error: '저장이 안됨'
                             });
                         }
-                        const message = template.resetEmail(req, resetToken);
+                        // const message = template.resetEmail(req, resetToken);
 
-                        mailgun.sendEmail(user.email, message);
+                        // mailgun.sendEmail(user.email, message);
 
                         return res.status(200).json({
                             success: true,
@@ -160,8 +164,8 @@ exports.user_reset = (req, res) => {
                                 });
                             }
 
-                            const message = template.confirmResetPasswordEmail();
-                            mailgun.sendEmail(user.email, message);
+                            // const message = template.confirmResetPasswordEmail();
+                            // mailgun.sendEmail(user.email, message);
 
                             return res.status(200).json({
                                 success: true,

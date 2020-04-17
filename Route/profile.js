@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const tokenGenerator = require('../config/tokengenerator');
+
 const passport = require('passport');
 const checkAuth = passport.authenticate('jwt', { session: false });
 
-const {profile_post} = require('../controller/profile');
+const {profile_post, profile_get, profile_del} = require('../controller/profile');
 
-router.post('/post', profile_post);
+router.post('/', checkAuth, profile_post);
+
+router.get('/', checkAuth, profile_get);
+
+router.delete('/:profileId', checkAuth, profile_del)
 
 module.exports = router;
