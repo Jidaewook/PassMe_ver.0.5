@@ -75,3 +75,30 @@ exports.profile_del = (req, res) => {
 };
 
 //프로필 수정
+exports.profile_patch = (req, res) => {
+    profileModel
+        .findOne({user: req.user.id})
+        .then(profile => {
+            if(!profile){
+                res.status(400).json({
+                    message: "DB have not your profile"
+                });
+            }
+            
+            const { age, bio, major, location, testname, preference, task } = req.body;
+
+            profileModel
+                .findOneAndUpdate(
+                    {user: req.user.id},
+                    {$set: {age, bio, major, location, testname, preference, task}},
+                    {new: true}
+                )
+                .then(profile => {
+                    res.status(200).json({
+                        message: "Updated profile",
+                        newProfile: profile
+                    });
+                });
+
+        });
+};
