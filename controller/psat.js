@@ -37,7 +37,7 @@ exports.psat_get = (req, res) => {
             res.status(200).json({
                 message: 'Successful Get PSAT',
                 count: items.length,
-                psatInfo: items
+                results: items
             })
         })
         .catch(err => {

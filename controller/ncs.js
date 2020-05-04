@@ -38,7 +38,7 @@ exports.ncs_get = (req, res) => {
             res.status(200).json({
                 message: 'Successful Get NCS',
                 count: items.length,
-                ncsInfo: items
+                results: items
             })
         })
         .catch(err => {
